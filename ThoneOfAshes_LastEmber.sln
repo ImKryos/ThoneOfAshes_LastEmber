@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36212.18 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThoneOfAshes_LastEmber", "ThoneOfAshes_LastEmber\ThoneOfAshes_LastEmber.csproj", "{61F3A92C-5352-4A4B-BCB7-CDE3CF816530}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{61F3A92C-5352-4A4B-BCB7-CDE3CF816530}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61F3A92C-5352-4A4B-BCB7-CDE3CF816530}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61F3A92C-5352-4A4B-BCB7-CDE3CF816530}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61F3A92C-5352-4A4B-BCB7-CDE3CF816530}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8ABE0027-F13E-413C-820A-EC82F59C493A}
+	EndGlobalSection
+EndGlobal
