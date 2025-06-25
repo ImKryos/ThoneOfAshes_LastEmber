@@ -67,6 +67,7 @@ namespace ThoneOfAshes_LastEmber
             GraphicsDevice.Clear(Color.Black);
 
 
+
             _spriteBatch.Begin();
             _spriteBatch.Draw(
                 kindledTexture,             // the texture
