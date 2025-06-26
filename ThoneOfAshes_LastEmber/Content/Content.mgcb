@@ -85,3 +85,10 @@
 /processorParam:TextureFormat=Color
 /build:throneofashes.png
 
+#begin UIFont.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:UIFont.spritefont
+

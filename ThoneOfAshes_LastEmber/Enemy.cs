@@ -8,7 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace ThoneOfAshes_LastEmber
 {
-    internal class Enemy
+    public class Enemy
     {
         public Vector2 Position;
         private Texture2D texture;
