@@ -32,6 +32,10 @@ namespace ThoneOfAshes_LastEmber
 
         List<DamagePopup> damagePopups = new List<DamagePopup>(); // List to hold damage popups
 
+        Color damageFlashColor = Color.DarkRed; // Color for the damage flash effect
+        float flashAlpha = 0f; // Alpha value for the flash effect
+        float flashDuration = 0.2f; // Duration of the flash effect in seconds
+
 
 
         public Game1()
@@ -109,7 +113,8 @@ namespace ThoneOfAshes_LastEmber
                     playerHP--; // Decrease player health ** UPDATE LATER with enemy damage value
                     damageTimer = 0f; // Reset the damage timer
                     damagePopups.Add(new DamagePopup(playerPosition + new Vector2(-10, -40), 1)); // Add a damage popup at the player's position
-                
+                    flashAlpha = 1f; // Set the flash effect to full alpha
+
                     if (playerHP <= 0)
                     {
                         Exit(); // Exit the game if player health reaches 0d
@@ -158,6 +163,13 @@ namespace ThoneOfAshes_LastEmber
                 {
                     damagePopups.RemoveAt(i); // Remove the popup if its lifetime has expired
                 }
+            }
+
+            if (flashAlpha > 0)
+            {
+                float fadeSpeed = 1f / flashDuration; // Speed of the fade effect
+                flashAlpha -= (float)gameTime.ElapsedGameTime.TotalSeconds * fadeSpeed;
+                if (flashAlpha < 0f) flashAlpha = 0f; // Ensure alpha doesn't go below 0
             }
 
             base.Update(gameTime);
@@ -210,6 +222,20 @@ namespace ThoneOfAshes_LastEmber
             }
 
             _spriteBatch.End();
+
+            if (flashAlpha > 0f)
+            {
+                Texture2D flashTexture = new Texture2D(GraphicsDevice, 1, 1);
+                flashTexture.SetData(new[] { Color.White }); // Create a 1x1 white texture for the flash effect
+
+                _spriteBatch.Begin();
+                _spriteBatch.Draw(
+                    flashTexture,
+                    new Rectangle(0, 0, _graphics.PreferredBackBufferWidth, _graphics.PreferredBackBufferHeight),
+                    damageFlashColor * flashAlpha // Apply the flash color with alpha
+                );
+                _spriteBatch.End();
+            }
 
             base.Draw(gameTime);
         }
