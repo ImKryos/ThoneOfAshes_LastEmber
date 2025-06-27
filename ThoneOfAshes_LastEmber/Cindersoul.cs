@@ -8,29 +8,26 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace ThoneOfAshes_LastEmber
 {
-    public class Projectile
+    public class Cindersoul
     {
-
         public Vector2 Position;
-        public Vector2 Velocity;
         private Texture2D texture;
-        private float speed = 400f; // Speed in pixels per second
-        private float lifetime = 3f; // Lifetime of the projectile in seconds
-        private float timer = 0f; // Timer to track the lifetime of the projectile
-        public bool IsExpired => timer >= lifetime; // Property to check if the projectile has expired
+        private float floatSpeed = 20f; // bobbing speed in pixels per second
+        private float timer = 0f; // timer to track the bobbing effect
 
-        public Projectile(Texture2D texture, Vector2 startPosition, Vector2 direction)
+        public bool Collected = false; // Flag to check if the Cindersoul has been collected
+
+        public Cindersoul(Texture2D texture, Vector2 startPosition)
         {
             this.texture = texture;
             this.Position = startPosition;
-            this.Velocity = direction * speed; // Set the velocity based on the direction and speed
         }
 
         public void Update(GameTime gameTime)
         {
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            Position += Velocity * delta; // Update the position based on velocity and elapsed time
-            timer += delta; // Update the timer
+            timer += delta;
+            Position.Y += (float)Math.Sin(timer * 4f) * floatSpeed * delta; // gentle bob
         }
 
         public void Draw(SpriteBatch spriteBatch)
@@ -43,11 +40,10 @@ namespace ThoneOfAshes_LastEmber
                 Color.White, 
                 0f, 
                 origin, 
-                0.03f, // Scale of the projectile
+                0.05f, // Scale of the Cindersoul
                 SpriteEffects.None, 
                 0f // Layer depth
             );
         }
-
     }
 }

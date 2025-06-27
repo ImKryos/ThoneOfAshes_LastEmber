@@ -13,6 +13,10 @@ namespace ThoneOfAshes_LastEmber
         public Vector2 Position;
         private Texture2D texture;
         private float speed = 50f; // Speed in pixels per second
+        public bool IsDead = false; // Placeholder for enemy death logic
+        public int health = 2; // Placeholder for enemy health
+        public float deathFade = 1f; // Placeholder for death fade effect
+        private float fadeSpeed = 1f; // Speed of fade effect
 
         public Enemy(Texture2D texture, Vector2 spawnPosition)
         {
@@ -20,9 +24,25 @@ namespace ThoneOfAshes_LastEmber
             this.Position = spawnPosition;
         }
 
+        public void TakeDamage(int damage)
+        {
+            health -= damage;
+            if (health <= 0)
+            {
+                IsDead = true;
+            }
+        }
+
         public void Update(GameTime gameTime, Vector2 playerPosition)
         {
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            if (IsDead)
+            {
+                deathFade -= fadeSpeed * delta; // Decrease the death fade over time
+                if (deathFade < 0f) deathFade = 0f; // Ensure death fade does not go below 0
+                return; // Skip update if dead
+            }
 
             // Move toward the player
             Vector2 direction = playerPosition - Position;
@@ -41,7 +61,7 @@ namespace ThoneOfAshes_LastEmber
                 texture, 
                 Position,
                 null,
-                Color.White,
+                Color.White * deathFade,
                 0f,
                 origin,
                 scale,

@@ -3,12 +3,13 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ThoneOfAshes_LastEmber
 {
     public class Game1 : Game
     {
-
+        Random rng = new Random(); // Random number generator
         SpriteFont uiFont;
 
         private GraphicsDeviceManager _graphics;
@@ -35,6 +36,15 @@ namespace ThoneOfAshes_LastEmber
         Color damageFlashColor = Color.DarkRed; // Color for the damage flash effect
         float flashAlpha = 0f; // Alpha value for the flash effect
         float flashDuration = 0.2f; // Duration of the flash effect in seconds
+
+        List<Projectile> projectiles = new List<Projectile>(); // List to hold projectiles
+        Texture2D flameburstTexture; // Placeholder for the flameburst texture
+        float projectileTimer = 0f; // Timer for projectile firing
+        float projectileCooldown = 3.0f; // Cooldown time in seconds between projectiles
+
+        Texture2D cindersoulTexture; // Placeholder for Cindersoul texture
+        List<Cindersoul> cindersouls = new List<Cindersoul>(); // List to hold Cindersouls
+        int xpCollected = 0; // Experience points collected
 
 
 
@@ -78,7 +88,8 @@ namespace ThoneOfAshes_LastEmber
 
             ashwretchTexture = Content.Load<Texture2D>("ashwretch"); // Load Ashwretch texture
             enemies.Add(new Enemy(ashwretchTexture, new Vector2(1, 1))); // Add an enemy at a specific position
-
+            flameburstTexture = Content.Load<Texture2D>("flameburst"); // Load the flameburst texture
+            cindersoulTexture = Content.Load<Texture2D>("cindersoul"); // Load the Cindersoul texture
 
         }
 
@@ -98,6 +109,26 @@ namespace ThoneOfAshes_LastEmber
             if (keyState.IsKeyDown(Keys.A)) playerPosition.X -= playerSpeed * deltaTime; // Move left
             if (keyState.IsKeyDown(Keys.D)) playerPosition.X += playerSpeed * deltaTime; // Move right
 
+            projectileTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (projectileTimer >= projectileCooldown)
+            {
+                projectileTimer = 0f; // Reset the projectile timer
+
+                // Fire toward the nearest enemy if one exists
+                if (enemies.Count >0)
+                {
+                    Enemy closest = enemies.OrderBy(e => Vector2.Distance(playerPosition, e.Position)).First();
+
+                    Vector2 direction = closest.Position - playerPosition;
+                    if (direction != Vector2.Zero)
+                    {
+                        direction.Normalize(); // Normalize the direction vector
+                    }
+
+                    projectiles.Add(new Projectile(flameburstTexture, playerPosition, direction)); // Create a new projectile
+                }
+            }
+
             foreach (var enemy in enemies)
             {
                 enemy.Update(gameTime, playerPosition);
@@ -105,6 +136,8 @@ namespace ThoneOfAshes_LastEmber
 
             foreach (var enemy in enemies)
             {
+                if (enemy.IsDead) continue; // Skip dead enemies
+
                 float distance = Vector2.Distance(playerPosition, enemy.Position);
                 float collisionRadius = 40f; // Adjust this value based on your player and enemy sizes
 
@@ -172,6 +205,57 @@ namespace ThoneOfAshes_LastEmber
                 if (flashAlpha < 0f) flashAlpha = 0f; // Ensure alpha doesn't go below 0
             }
 
+            for (int i = projectiles.Count -1; i >= 0; i--)
+            {
+                projectiles[i].Update(gameTime);
+                if (projectiles[i].IsExpired)
+                {
+                    projectiles.RemoveAt(i); // Remove expired projectiles
+                }
+            }
+
+            for (int i = projectiles.Count -1; i >= 0; i--)
+            {
+                var projectile = projectiles[i];
+
+                foreach (var enemy in enemies)
+                {
+                    if (enemy.IsDead) continue; // Skip dead enemies
+
+                    float distance = Vector2.Distance(projectile.Position, enemy.Position);
+                    float hitRadius = 20f; // Adjust this value based on your projectile and enemy sizes
+
+                    if (distance < hitRadius)
+                    {
+                        enemy.TakeDamage(1); // Deal damage to the enemy
+                        if (enemy.IsDead)
+                        {
+                            if (rng.NextDouble() < 0.5) // 50% chance to drop a Cindersoul
+                            {
+                                cindersouls.Add(new Cindersoul(cindersoulTexture, enemy.Position)); // Add a Cindersoul at the enemy's position
+                            }
+                        }
+                        projectiles.RemoveAt(i); // Remove the projectile after hitting
+                        break; // Exit the loop to avoid modifying the collection during iteration
+                    }
+                }
+            }
+
+            enemies.RemoveAll(e => e.IsDead && e.health <= 0 && e.deathFade <= 0f); // Remove dead enemies
+
+            for (int i = cindersouls.Count - 1; i >= 0; i--)
+            {
+                var soul = cindersouls[i];
+                soul.Update(gameTime);
+
+                float collectDistance = 30f; // Distance to collect the Cindersoul
+                if (Vector2.Distance(playerPosition, soul.Position) < collectDistance)
+                {
+                    xpCollected++;
+                    cindersouls.RemoveAt(i); // Remove the Cindersoul after collection
+                }
+            }
+
             base.Update(gameTime);
         }
 
@@ -220,6 +304,19 @@ namespace ThoneOfAshes_LastEmber
             {
                 popup.Draw(_spriteBatch, uiFont);
             }
+
+            // Draw projectiles
+            foreach (var projectile in projectiles)
+            {
+                projectile.Draw(_spriteBatch);
+            }
+
+            foreach (var soul in cindersouls)
+            {
+                soul.Draw(_spriteBatch);
+            }
+
+            _spriteBatch.DrawString(uiFont, $"XP: {xpCollected}", new Vector2(10, 10), Color.LightGoldenrodYellow); // Draw the XP counter
 
             _spriteBatch.End();
 
