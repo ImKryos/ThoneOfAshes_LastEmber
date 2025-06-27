@@ -24,12 +24,16 @@ namespace ThoneOfAshes_LastEmber
         List<Enemy> enemies = new List<Enemy>();
 
         float spawnTimer = 0f; // Timer for spawning enemies
-        float spawnInterval = 2f; // Time in seconds between enemy spawns
+        float spawnInterval = 3f; // Time in seconds between enemy spawns
         Random random = new Random(); // For positioning
 
         int playerHP = 5; // Player health
         float damageCooldown = 1f; // Cooldown time in seconds after taking damage
         float damageTimer = 0f; // Timer to track damage cooldown
+        int playerLevel = 1; // Player level, can be used for scaling difficulty or abilities
+        int currentXP = 0; // Current experience points
+        int xpToNextLevel = 5; // Experience points required to level up
+        bool levelUpPending = false; // Flag to indicate if a level-up is pending
 
         List<DamagePopup> damagePopups = new List<DamagePopup>(); // List to hold damage popups
 
@@ -44,8 +48,9 @@ namespace ThoneOfAshes_LastEmber
 
         Texture2D cindersoulTexture; // Placeholder for Cindersoul texture
         List<Cindersoul> cindersouls = new List<Cindersoul>(); // List to hold Cindersouls
-        int xpCollected = 0; // Experience points collected
 
+        Rectangle upgradeButtonRect = new Rectangle(100, 250, 500, 60); // Rectangle for the upgrade button
+        MouseState previousMouseState; // To track mouse state for button clicks
 
 
         public Game1()
@@ -100,6 +105,26 @@ namespace ThoneOfAshes_LastEmber
 
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+
+            if (levelUpPending)
+            {
+                MouseState mouseState = Mouse.GetState();
+
+                if (mouseState.LeftButton == ButtonState.Pressed && 
+                    previousMouseState.LeftButton == ButtonState.Released)
+                {
+                    Point clickPos = mouseState.Position;
+
+                    if (upgradeButtonRect.Contains(clickPos))
+                    {
+                        projectileCooldown *= 0.8f; // Reduce cooldown time by 20%
+                        levelUpPending = false; // Reset level-up pending flag
+                    }
+                }
+                previousMouseState = mouseState; // Update previous mouse state
+
+                return;
+            }
 
             KeyboardState keyState = Keyboard.GetState();
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -230,7 +255,7 @@ namespace ThoneOfAshes_LastEmber
                         enemy.TakeDamage(1); // Deal damage to the enemy
                         if (enemy.IsDead)
                         {
-                            if (rng.NextDouble() < 0.5) // 50% chance to drop a Cindersoul
+                            if (rng.NextDouble() < 0.75) // 75% chance to drop a Cindersoul
                             {
                                 cindersouls.Add(new Cindersoul(cindersoulTexture, enemy.Position)); // Add a Cindersoul at the enemy's position
                             }
@@ -251,10 +276,19 @@ namespace ThoneOfAshes_LastEmber
                 float collectDistance = 30f; // Distance to collect the Cindersoul
                 if (Vector2.Distance(playerPosition, soul.Position) < collectDistance)
                 {
-                    xpCollected++;
+                    currentXP++;
+                    if (currentXP >= xpToNextLevel)
+                    {
+                        playerLevel++;
+                        currentXP -= xpToNextLevel; // Reset XP after leveling up
+                        levelUpPending = true; // Set flag for level-up
+                        xpToNextLevel = (int)(xpToNextLevel * 1.5f); // Increase XP needed for next level
+                    }
                     cindersouls.RemoveAt(i); // Remove the Cindersoul after collection
                 }
             }
+
+            
 
             base.Update(gameTime);
         }
@@ -316,11 +350,37 @@ namespace ThoneOfAshes_LastEmber
                 soul.Draw(_spriteBatch);
             }
 
-            _spriteBatch.DrawString(uiFont, $"XP: {xpCollected}", new Vector2(10, 10), Color.LightGoldenrodYellow); // Draw the XP counter
+            _spriteBatch.DrawString(uiFont, $"XP: {currentXP}", new Vector2(10, 10), Color.LightGoldenrodYellow); // Draw the XP counter
+
+            
 
             _spriteBatch.End();
 
-            if (flashAlpha > 0f)
+            if (levelUpPending)
+            {
+                _spriteBatch.Begin();
+
+                // Draw background box for the level-up prompt
+                Texture2D upgradeBox = new Texture2D(GraphicsDevice, 1, 1);
+                upgradeBox.SetData(new[] { Color.DarkSlateGray }); // Create a 1x1 dark slate gray texture for the box
+
+                _spriteBatch.Draw(
+                    upgradeBox,
+                    upgradeButtonRect,
+                    Color.DarkSlateGray * 0.8f
+                ); // Draw the upgrade button background
+
+                _spriteBatch.DrawString(
+                    uiFont,
+                    "Upgrade Flameburst: Cooldown reduced by 20%",
+                    new Vector2(upgradeButtonRect.X + 10, upgradeButtonRect.Y + 20),
+                    Color.White
+                );
+
+                _spriteBatch.End();
+            }
+
+                if (flashAlpha > 0f)
             {
                 Texture2D flashTexture = new Texture2D(GraphicsDevice, 1, 1);
                 flashTexture.SetData(new[] { Color.White }); // Create a 1x1 white texture for the flash effect
