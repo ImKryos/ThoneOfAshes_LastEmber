@@ -30,11 +30,11 @@ namespace ThoneOfAshes_LastEmber
             return timer > lifetime; // Return true if the popup should be 
         }
 
-        public void Draw(SpriteBatch spriteBatch, SpriteFont font)
+        public void Draw(SpriteBatch spriteBatch, SpriteFont font, Vector2 cameraPosition)
         {
             spriteBatch.DrawString(font, 
                 Text, // Draw the text
-                Position, // Position of the popup
+                Position - cameraPosition, // Position of the popup
                 Color.OrangeRed, // Color of the text
                 0f, // Rotation of the text
                 Vector2.Zero, // Origin of the text (no offset)

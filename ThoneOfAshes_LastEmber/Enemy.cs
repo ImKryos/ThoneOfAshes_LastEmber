@@ -52,22 +52,23 @@ namespace ThoneOfAshes_LastEmber
             Position += direction * speed * delta;
         }
 
-        public void Draw(SpriteBatch spriteBatch)
+        public void Draw(SpriteBatch spriteBatch, Vector2 cameraPosition)
         {
-            Vector2 origin = new Vector2(texture.Width / 2f, texture.Height / 2f);
-            float scale = 0.1f; // Scale down the texture for better visibility
+            if (IsDead && deathFade <= 0f) return;
 
+            float scale = 0.1f;
+            Vector2 origin = new Vector2(texture.Width / 2f, texture.Height / 2f);
             spriteBatch.Draw(
-                texture, 
-                Position,
+                texture,
+                Position - cameraPosition,
                 null,
-                Color.White * deathFade,
+                Color.White * (IsDead ? deathFade : 1f),
                 0f,
                 origin,
                 scale,
                 SpriteEffects.None,
                 0f
-                );
+            );
         }
     }
 }

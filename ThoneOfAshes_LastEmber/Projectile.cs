@@ -33,12 +33,12 @@ namespace ThoneOfAshes_LastEmber
             timer += delta; // Update the timer
         }
 
-        public void Draw(SpriteBatch spriteBatch)
+        public void Draw(SpriteBatch spriteBatch, Vector2 cameraPosition)
         {
             Vector2 origin = new Vector2(texture.Width / 2f, texture.Height / 2f);
             spriteBatch.Draw(
                 texture, 
-                Position, 
+                Position - cameraPosition, 
                 null, 
                 Color.White, 
                 0f, 

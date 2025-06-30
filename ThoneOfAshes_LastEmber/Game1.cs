@@ -52,6 +52,9 @@ namespace ThoneOfAshes_LastEmber
         Rectangle upgradeButtonRect = new Rectangle(100, 250, 500, 60); // Rectangle for the upgrade button
         MouseState previousMouseState; // To track mouse state for button clicks
 
+        Texture2D backgroundTexture; // Placeholder for background texture
+        Vector2 cameraPosition = Vector2.Zero; // Camera position for scrolling background
+
 
         public Game1()
         {
@@ -95,12 +98,14 @@ namespace ThoneOfAshes_LastEmber
             enemies.Add(new Enemy(ashwretchTexture, new Vector2(1, 1))); // Add an enemy at a specific position
             flameburstTexture = Content.Load<Texture2D>("flameburst"); // Load the flameburst texture
             cindersoulTexture = Content.Load<Texture2D>("cindersoul"); // Load the Cindersoul texture
+            backgroundTexture = Content.Load<Texture2D>("ashlands_background"); // Load the background texture
 
         }
 
         protected override void Update(GameTime gameTime)
         {
 
+            cameraPosition = playerPosition - new Vector2(_graphics.PreferredBackBufferWidth / 2f, _graphics.PreferredBackBufferHeight / 2f);
             damageTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
 
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
@@ -297,13 +302,35 @@ namespace ThoneOfAshes_LastEmber
         {
             GraphicsDevice.Clear(Color.Black);
 
+            _spriteBatch.Begin();
+
+            int tileSize = backgroundTexture.Width; // Assuming square tiles
+            int tilesX = (_graphics.PreferredBackBufferWidth / tileSize) + 3; // Extra tiles for scrolling
+            int tilesY = (_graphics.PreferredBackBufferHeight / tileSize) + 3; // Extra tiles for scrolling
+
+            Vector2 topLeft = new Vector2(
+                (float)Math.Floor(cameraPosition.X / tileSize) * tileSize,
+                (float)Math.Floor(cameraPosition.Y / tileSize) * tileSize
+            );
+
+            for (int x = -1; x < tilesX; x++)
+            {
+                for (int y = -1; y < tilesY; y++)
+                {
+                    Vector2 position = new Vector2(x * tileSize, y * tileSize);
+                    Vector2 screenPosition = position - cameraPosition;
+                    _spriteBatch.Draw(backgroundTexture, screenPosition, Color.White);
+                }
+            }
+            _spriteBatch.End();
+
             // Draw the player
             _spriteBatch.Begin(); 
             Vector2 origin = new Vector2(kindledTexture.Width / 2f, kindledTexture.Height / 2f); // Center the origin for rotation
             float scale = 0.1f; // Scale down the texture for better visibility
             _spriteBatch.Draw(
                 kindledTexture,             // the texture
-                playerPosition,             // position on screen
+                playerPosition - cameraPosition,             // position on screen
                 null,                       // source rectangle (null = full image)
                 Color.White,                // tint
                 0f,                         // rotation
@@ -319,7 +346,7 @@ namespace ThoneOfAshes_LastEmber
             int hpBarHeight = 6; // Height of the HP bar
 
             float hpPercentage = (float)playerHP / maxHP; // Calculate the percentage of HP remaining
-            Vector2 hpBarPosition = playerPosition + new Vector2(-hpBarWidth / 2, 40); // Position of the HP bar
+            Vector2 hpBarPosition = (playerPosition - cameraPosition) + new Vector2(-hpBarWidth / 2, 40); // Position of the HP bar
 
             Texture2D hpBar = new Texture2D(GraphicsDevice, 1, 1);
             hpBar.SetData(new[] { Color.White }); // Create a 1x1 white texture for the HP bar
@@ -330,24 +357,24 @@ namespace ThoneOfAshes_LastEmber
             // Draw the enemies
             foreach (var enemy in enemies)
             {
-                enemy.Draw(_spriteBatch);
+                enemy.Draw(_spriteBatch, cameraPosition);
             }
 
             // Draw damage popups
             foreach (var popup in damagePopups)
             {
-                popup.Draw(_spriteBatch, uiFont);
+                popup.Draw(_spriteBatch, uiFont, cameraPosition);
             }
 
             // Draw projectiles
             foreach (var projectile in projectiles)
             {
-                projectile.Draw(_spriteBatch);
+                projectile.Draw(_spriteBatch, cameraPosition);
             }
 
             foreach (var soul in cindersouls)
             {
-                soul.Draw(_spriteBatch);
+                soul.Draw(_spriteBatch, cameraPosition);
             }
 
             _spriteBatch.DrawString(uiFont, $"XP: {currentXP}", new Vector2(10, 10), Color.LightGoldenrodYellow); // Draw the XP counter
