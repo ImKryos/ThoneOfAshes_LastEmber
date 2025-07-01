@@ -53,6 +53,8 @@ namespace ThoneOfAshes_LastEmber
         MouseState previousMouseState; // To track mouse state for button clicks
 
         Texture2D backgroundTexture; // Placeholder for background texture
+        Texture2D emberLayerTexture; // Placeholder for foreground texture
+        private Vector2 emberDriftOffset = Vector2.Zero; // Offset for the ember layer drift effect
         Vector2 cameraPosition = Vector2.Zero; // Camera position for scrolling background
 
 
@@ -99,6 +101,7 @@ namespace ThoneOfAshes_LastEmber
             flameburstTexture = Content.Load<Texture2D>("flameburst"); // Load the flameburst texture
             cindersoulTexture = Content.Load<Texture2D>("cindersoul"); // Load the Cindersoul texture
             backgroundTexture = Content.Load<Texture2D>("ashlands_background"); // Load the background texture
+            emberLayerTexture = Content.Load<Texture2D>("ashlands_foreground"); // Load the foreground texture
 
         }
 
@@ -107,6 +110,7 @@ namespace ThoneOfAshes_LastEmber
 
             cameraPosition = playerPosition - new Vector2(_graphics.PreferredBackBufferWidth / 2f, _graphics.PreferredBackBufferHeight / 2f);
             damageTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
+            emberDriftOffset += new Vector2(10f, 4f) * (float)gameTime.ElapsedGameTime.TotalSeconds; // Update ember drift offset
 
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
@@ -304,22 +308,59 @@ namespace ThoneOfAshes_LastEmber
 
             _spriteBatch.Begin();
 
-            int tileSize = backgroundTexture.Width; // Assuming square tiles
-            int tilesX = (_graphics.PreferredBackBufferWidth / tileSize) + 3; // Extra tiles for scrolling
-            int tilesY = (_graphics.PreferredBackBufferHeight / tileSize) + 3; // Extra tiles for scrolling
+            int tileSize = 1024; 
+            int tilesX = (_graphics.PreferredBackBufferWidth / tileSize) + 2; // Extra tiles for scrolling
+            int tilesY = (_graphics.PreferredBackBufferHeight / tileSize) + 2; // Extra tiles for scrolling
 
-            Vector2 topLeft = new Vector2(
-                (float)Math.Floor(cameraPosition.X / tileSize) * tileSize,
-                (float)Math.Floor(cameraPosition.Y / tileSize) * tileSize
-            );
+            int startX = (int)Math.Floor(cameraPosition.X / tileSize) * tileSize;
+            int startY = (int)Math.Floor(cameraPosition.Y / tileSize) * tileSize;
 
-            for (int x = -1; x < tilesX; x++)
+           
+            for (int x = 0; x < tilesX; x++)
             {
-                for (int y = -1; y < tilesY; y++)
+                for (int y = 0; y < tilesY; y++)
                 {
-                    Vector2 position = new Vector2(x * tileSize, y * tileSize);
-                    Vector2 screenPosition = position - cameraPosition;
-                    _spriteBatch.Draw(backgroundTexture, screenPosition, Color.White);
+                    Vector2 tilePosition = new Vector2(startX + x * tileSize, startY + y * tileSize);
+                    _spriteBatch.Draw(
+                        backgroundTexture,              // the background texture
+                        tilePosition - cameraPosition,  // offset position based on camera
+                        Color.White
+                    );
+                }
+            }
+
+            float emberScale = 0.1f; // Scale for the foreground texture
+            int tileWidth = (int)(emberLayerTexture.Width * emberScale);
+            int tileHeight = (int)(emberLayerTexture.Height * emberScale);
+
+            Vector2 parallaxOffset = (playerPosition * 0.9f) + emberDriftOffset; // parallax effect for the foreground
+            
+            int tilesXForeground = (_graphics.PreferredBackBufferWidth / tileWidth) + 2; // Extra tiles for scrolling
+            int tilesYForeground = (_graphics.PreferredBackBufferHeight / tileHeight) + 2; // Extra tiles for scrolling
+
+            int startXForeground = (int)Math.Floor(parallaxOffset.X / tileWidth);
+            int startYForeground = (int)Math.Floor(parallaxOffset.Y / tileHeight);
+
+            for (int y = -1; y < tilesYForeground; y++)
+            {
+                for (int x = -1; x < tilesXForeground; x++)
+                {
+                    Vector2 foregroundPosition = new Vector2(
+                        x * tileWidth - (int)(parallaxOffset.X % tileWidth),
+                        y * tileHeight - (int)(parallaxOffset.Y % tileHeight)
+                    );
+
+                    _spriteBatch.Draw(
+                        emberLayerTexture,              // the foreground texture
+                        foregroundPosition,              // offset position based on camera
+                        null,                           // source rectangle (null = full image)
+                        Color.White * 0.5f,                    // tint
+                        0f,                             // rotation
+                        Vector2.Zero,                  // origin (no rotation)
+                        emberScale,                     // scale
+                        SpriteEffects.None,             // no flipping
+                        0f                              // layer depth
+                    );
                 }
             }
             _spriteBatch.End();
