@@ -55,6 +55,12 @@ namespace ThoneOfAshes_LastEmber
         Texture2D backgroundTexture; // Placeholder for background texture
         Texture2D emberLayerTexture; // Placeholder for foreground texture
         private Vector2 emberDriftOffset = Vector2.Zero; // Offset for the ember layer drift effect
+        Texture2D smokeOverlayTexture; // Placeholder for smoke overlay texture
+        Vector2 smokeOffset = Vector2.Zero; // Offset for the smoke overlay
+        float smokeScrollSpeed = 10f; // Speed of the smoke overlay scrolling
+        Texture2D ashGaleTexture; // Placeholder for Ash Gale texture
+        Vector2 ashGaleOffset = Vector2.Zero; // Offset for the Ash Gale effect
+
         Vector2 cameraPosition = Vector2.Zero; // Camera position for scrolling background
 
 
@@ -102,7 +108,8 @@ namespace ThoneOfAshes_LastEmber
             cindersoulTexture = Content.Load<Texture2D>("cindersoul"); // Load the Cindersoul texture
             backgroundTexture = Content.Load<Texture2D>("ashlands_background"); // Load the background texture
             emberLayerTexture = Content.Load<Texture2D>("ashlands_foreground"); // Load the foreground texture
-
+            smokeOverlayTexture = Content.Load<Texture2D>("smoke_whisp"); // Load the smoke overlay texture
+            ashGaleTexture = Content.Load<Texture2D>("ash_gale"); // Load the Ash Gale texture
         }
 
         protected override void Update(GameTime gameTime)
@@ -111,6 +118,8 @@ namespace ThoneOfAshes_LastEmber
             cameraPosition = playerPosition - new Vector2(_graphics.PreferredBackBufferWidth / 2f, _graphics.PreferredBackBufferHeight / 2f);
             damageTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
             emberDriftOffset += new Vector2(10f, 4f) * (float)gameTime.ElapsedGameTime.TotalSeconds; // Update ember drift offset
+            smokeOffset += new Vector2(5f, 2f) * (float)gameTime.ElapsedGameTime.TotalSeconds;
+            ashGaleOffset += new Vector2(100f, 40f) * (float)gameTime.ElapsedGameTime.TotalSeconds; // Update Ash Gale offset
 
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
@@ -329,40 +338,46 @@ namespace ThoneOfAshes_LastEmber
                 }
             }
 
-            float emberScale = 0.1f; // Scale for the foreground texture
-            int tileWidth = (int)(emberLayerTexture.Width * emberScale);
-            int tileHeight = (int)(emberLayerTexture.Height * emberScale);
+            float smokeScale = 1f; // Smoke should tile less densely than embers
+            int smokeTileWidth = (int)(smokeOverlayTexture.Width * smokeScale);
+            int smokeTileHeight = (int)(smokeOverlayTexture.Height * smokeScale);
 
-            Vector2 parallaxOffset = (playerPosition * 0.9f) + emberDriftOffset; // parallax effect for the foreground
-            
-            int tilesXForeground = (_graphics.PreferredBackBufferWidth / tileWidth) + 2; // Extra tiles for scrolling
-            int tilesYForeground = (_graphics.PreferredBackBufferHeight / tileHeight) + 2; // Extra tiles for scrolling
+            Vector2 smokeParallaxOffset = (playerPosition * 0.98f) + smokeOffset; // deeper layer = slower parallax
 
-            int startXForeground = (int)Math.Floor(parallaxOffset.X / tileWidth);
-            int startYForeground = (int)Math.Floor(parallaxOffset.Y / tileHeight);
+            int tilesXSmoke = (_graphics.PreferredBackBufferWidth / smokeTileWidth) + 2;
+            int tilesYSmoke = (_graphics.PreferredBackBufferHeight / smokeTileHeight) + 2;
 
-            for (int y = -1; y < tilesYForeground; y++)
+            int startXSmoke = (int)Math.Floor(smokeParallaxOffset.X / smokeTileWidth);
+            int startYSmoke = (int)Math.Floor(smokeParallaxOffset.Y / smokeTileHeight);
+
+            for (int y = -1; y < tilesYSmoke; y++)
             {
-                for (int x = -1; x < tilesXForeground; x++)
+                for (int x = -1; x < tilesXSmoke; x++)
                 {
-                    Vector2 foregroundPosition = new Vector2(
-                        x * tileWidth - (int)(parallaxOffset.X % tileWidth),
-                        y * tileHeight - (int)(parallaxOffset.Y % tileHeight)
+                    Vector2 smokePosition = new Vector2(
+                        x * smokeTileWidth - (int)(smokeParallaxOffset.X % smokeTileWidth),
+                        y * smokeTileHeight - (int)(smokeParallaxOffset.Y % smokeTileHeight)
                     );
 
                     _spriteBatch.Draw(
-                        emberLayerTexture,              // the foreground texture
-                        foregroundPosition,              // offset position based on camera
-                        null,                           // source rectangle (null = full image)
-                        Color.White * 0.5f,                    // tint
-                        0f,                             // rotation
-                        Vector2.Zero,                  // origin (no rotation)
-                        emberScale,                     // scale
-                        SpriteEffects.None,             // no flipping
-                        0f                              // layer depth
+                        smokeOverlayTexture,
+                        smokePosition,
+                        null,
+                        Color.White * 0.2f, // less intense than embers
+                        0f,
+                        Vector2.Zero,
+                        smokeScale,
+                        SpriteEffects.None,
+                        0f
                     );
                 }
             }
+
+            
+            
+
+            
+
             _spriteBatch.End();
 
             // Draw the player
@@ -420,7 +435,79 @@ namespace ThoneOfAshes_LastEmber
 
             _spriteBatch.DrawString(uiFont, $"XP: {currentXP}", new Vector2(10, 10), Color.LightGoldenrodYellow); // Draw the XP counter
 
-            
+            float emberScale = 0.1f; // Scale for the foreground texture
+            int tileWidth = (int)(emberLayerTexture.Width * emberScale);
+            int tileHeight = (int)(emberLayerTexture.Height * emberScale);
+
+            Vector2 parallaxOffset = (playerPosition * 0.9f) + emberDriftOffset; // parallax effect for the foreground
+
+            int tilesXForeground = (_graphics.PreferredBackBufferWidth / tileWidth) + 2; // Extra tiles for scrolling
+            int tilesYForeground = (_graphics.PreferredBackBufferHeight / tileHeight) + 2; // Extra tiles for scrolling
+
+            int startXForeground = (int)Math.Floor(parallaxOffset.X / tileWidth);
+            int startYForeground = (int)Math.Floor(parallaxOffset.Y / tileHeight);
+
+            for (int y = -1; y < tilesYForeground; y++)
+            {
+                for (int x = -1; x < tilesXForeground; x++)
+                {
+                    Vector2 foregroundPosition = new Vector2(
+                        x * tileWidth - (int)(parallaxOffset.X % tileWidth),
+                        y * tileHeight - (int)(parallaxOffset.Y % tileHeight)
+                    );
+
+                    _spriteBatch.Draw(
+                        emberLayerTexture,              // the foreground texture
+                        foregroundPosition,              // offset position based on camera
+                        null,                           // source rectangle (null = full image)
+                        Color.White * 0.5f,                    // tint
+                        0f,                             // rotation
+                        Vector2.Zero,                  // origin (no rotation)
+                        emberScale,                     // scale
+                        SpriteEffects.None,             // no flipping
+                        0f                              // layer depth
+                    );
+                }
+            }
+
+            _spriteBatch.End();
+
+            _spriteBatch.Begin();
+
+            float ashGaleScale = 0.25f;
+            int ashGaleTileWidth = (int)(ashGaleTexture.Width * ashGaleScale);
+            int ashGaleTileHeight = (int)(ashGaleTexture.Height * ashGaleScale);
+
+            Vector2 ashGaleParallax = (playerPosition * 0.9f) + ashGaleOffset;
+
+            int ashGaleTilesX = (_graphics.PreferredBackBufferWidth / ashGaleTileWidth) + 2;
+            int ashGaleTilesY = (_graphics.PreferredBackBufferHeight / ashGaleTileHeight) + 2;
+
+            int ashGaleStartX = (int)Math.Floor(ashGaleParallax.X / ashGaleTileWidth);
+            int ashGaleStartY = (int)Math.Floor(ashGaleParallax.Y / ashGaleTileHeight);
+
+            for (int y = -1; y < ashGaleTilesY; y++)
+            {
+                for (int x = -1; x < ashGaleTilesX; x++)
+                {
+                    Vector2 pos = new Vector2(
+                        x * ashGaleTileWidth - (int)(ashGaleParallax.X % ashGaleTileWidth),
+                        y * ashGaleTileHeight - (int)(ashGaleParallax.Y % ashGaleTileHeight)
+                    );
+
+                    _spriteBatch.Draw(
+                        ashGaleTexture,
+                        pos,
+                        null,
+                        Color.White * 0.4f, // transparent effect
+                        0f,
+                        Vector2.Zero,
+                        ashGaleScale,
+                        SpriteEffects.None,
+                        0f
+                    );
+                }
+            }
 
             _spriteBatch.End();
 
