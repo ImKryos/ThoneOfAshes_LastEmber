@@ -17,6 +17,7 @@ namespace ThoneOfAshes_LastEmber
         public int health = 2; // Placeholder for enemy health
         public float deathFade = 1f; // Placeholder for death fade effect
         private float fadeSpeed = 1f; // Speed of fade effect
+        private Dictionary<string, float> weaponCooldowns = new Dictionary<string, float>();
 
         public Enemy(Texture2D texture, Vector2 spawnPosition)
         {
@@ -50,6 +51,25 @@ namespace ThoneOfAshes_LastEmber
                 direction.Normalize();
 
             Position += direction * speed * delta;
+
+            List<string> keys = weaponCooldowns.Keys.ToList();
+            foreach (string key in keys)
+            {
+                weaponCooldowns[key] -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (weaponCooldowns[key] <= 0f)
+                {
+                    weaponCooldowns.Remove(key);
+                }
+            }
+        }
+
+        public bool TryHit(string weaponId, float cooldown, int damage)
+        {
+            if (weaponCooldowns.ContainsKey(weaponId)) return false;
+
+            TakeDamage(damage);
+            weaponCooldowns[weaponId] = cooldown; // Set the cooldown for the weapon
+            return true; // Hit was successful
         }
 
         public void Draw(SpriteBatch spriteBatch, Vector2 cameraPosition)

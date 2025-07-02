@@ -338,6 +338,10 @@ namespace ThoneOfAshes_LastEmber
             foreach (var weapon in weapons)
             {
                 weapon.Update(gameTime, playerPosition); // Update each weapon
+                if (weapon is Ashbrand ashbrand)
+                {
+                    ashbrand.CheckCollision(enemies); // Check for collisions with enemies
+                }
             }
 
 
