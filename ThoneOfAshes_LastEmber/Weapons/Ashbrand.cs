@@ -18,6 +18,8 @@ namespace ThoneOfAshes_LastEmber.Weapons
         private float damageRadius = 25f; // Damage radius of the Ashbrand
         private string weaponId = "Ashbrand"; // Unique identifier for the Ashbrand weapon
         private float hitCooldown = 0.5f; // Cooldown time for hitting enemies
+        private float spinRotation = 0f; // Current rotation for the spinning effect
+        private float spinSpeed = 10f; // Speed of the spinning effect in radians per second
 
         public Ashbrand(Texture2D texture) : base(texture)
         {
@@ -33,6 +35,12 @@ namespace ThoneOfAshes_LastEmber.Weapons
             if (angle >= MathHelper.TwoPi)
             {
                 angle -= MathHelper.TwoPi;
+            }
+
+            spinRotation += spinSpeed * delta; // Update the spin rotation
+            if (spinRotation >= MathHelper.TwoPi)
+            {
+                spinRotation -= MathHelper.TwoPi; // Keep spin rotation within 0 to 2π range
             }
 
             // Calculate orbit position around the player
@@ -70,7 +78,7 @@ namespace ThoneOfAshes_LastEmber.Weapons
                 position - cameraPosition, // Position of the Ashbrand
                 null, // No source rectangle
                 Color.White, // Color of the Ashbrand
-                angle, // Rotation based on the angle
+                spinRotation, // Rotation for the spinning effect
                 origin, // Origin for rotation
                 scale, // Scale of the Ashbrand
                 SpriteEffects.None, // No special effects
