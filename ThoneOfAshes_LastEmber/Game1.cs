@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ThoneOfAshes_LastEmber.Weapons;
 
 namespace ThoneOfAshes_LastEmber
 {
@@ -34,6 +35,7 @@ namespace ThoneOfAshes_LastEmber
         int currentXP = 0; // Current experience points
         int xpToNextLevel = 5; // Experience points required to level up
         bool levelUpPending = false; // Flag to indicate if a level-up is pending
+        bool hasAshbrand = false; // Flag to indicate if the player has the Ashbrand ability
 
         List<DamagePopup> damagePopups = new List<DamagePopup>(); // List to hold damage popups
 
@@ -46,11 +48,15 @@ namespace ThoneOfAshes_LastEmber
         float projectileTimer = 0f; // Timer for projectile firing
         float projectileCooldown = 3.0f; // Cooldown time in seconds between projectiles
 
+        List<Weapon> weapons = new List<Weapon>(); // List to hold weapons
+
         Texture2D cindersoulTexture; // Placeholder for Cindersoul texture
         List<Cindersoul> cindersouls = new List<Cindersoul>(); // List to hold Cindersouls
 
         Rectangle upgradeButtonRect = new Rectangle(100, 250, 500, 60); // Rectangle for the upgrade button
         MouseState previousMouseState; // To track mouse state for button clicks
+
+        Rectangle debugLevelUpButton = new Rectangle(10, 50, 150, 40); // Debug button for level-up
 
         Texture2D backgroundTexture; // Placeholder for background texture
         Texture2D emberLayerTexture; // Placeholder for foreground texture
@@ -66,6 +72,18 @@ namespace ThoneOfAshes_LastEmber
 
         Vector2 cameraPosition = Vector2.Zero; // Camera position for scrolling background
 
+        private void CheckLevelUp()
+        {
+            if (levelUpPending) return; // If a level-up is already pending, do nothing
+
+            if (currentXP >= xpToNextLevel)
+            {
+                playerLevel++;
+                currentXP -= xpToNextLevel;
+                xpToNextLevel = (int)(xpToNextLevel * 1.5f); // scale cost
+                levelUpPending = true;
+            }
+        }
 
         public Game1()
         {
@@ -129,25 +147,37 @@ namespace ThoneOfAshes_LastEmber
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            if (levelUpPending)
+            MouseState mouseState = Mouse.GetState();
+
+            if (mouseState.LeftButton == ButtonState.Pressed &&
+                 previousMouseState.LeftButton == ButtonState.Released)
             {
-                MouseState mouseState = Mouse.GetState();
+                Point clickPos = mouseState.Position;
 
-                if (mouseState.LeftButton == ButtonState.Pressed && 
-                    previousMouseState.LeftButton == ButtonState.Released)
+                if (debugLevelUpButton.Contains(clickPos))
                 {
-                    Point clickPos = mouseState.Position;
-
-                    if (upgradeButtonRect.Contains(clickPos))
-                    {
-                        projectileCooldown *= 0.8f; // Reduce cooldown time by 20%
-                        levelUpPending = false; // Reset level-up pending flag
-                    }
+                    currentXP += xpToNextLevel; // Add enough XP to level up
+                    CheckLevelUp(); // Check if the player can level up
                 }
-                previousMouseState = mouseState; // Update previous mouse state
+            
+                if (levelUpPending && upgradeButtonRect.Contains(clickPos))
+                {
+                   
+                    if (!hasAshbrand)
+                    {
+                        weapons.Add(new Ashbrand(Content.Load<Texture2D>("Textures/Weapons/ashbrand_2")));
+                        hasAshbrand = true;
+                    }
+                    else
+                    {
+                        projectileCooldown *= 0.8f; // Fallback upgrade if already has Ashbrand
+                    }
 
-                return;
+                    levelUpPending = false;
+                }
             }
+            previousMouseState = mouseState; // Update previous mouse state
+
 
             KeyboardState keyState = Keyboard.GetState();
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -300,18 +330,16 @@ namespace ThoneOfAshes_LastEmber
                 if (Vector2.Distance(playerPosition, soul.Position) < collectDistance)
                 {
                     currentXP++;
-                    if (currentXP >= xpToNextLevel)
-                    {
-                        playerLevel++;
-                        currentXP -= xpToNextLevel; // Reset XP after leveling up
-                        levelUpPending = true; // Set flag for level-up
-                        xpToNextLevel = (int)(xpToNextLevel * 1.5f); // Increase XP needed for next level
-                    }
+                    CheckLevelUp(); // Check if the player can level up after collecting a Cindersoul
                     cindersouls.RemoveAt(i); // Remove the Cindersoul after collection
                 }
             }
 
-            
+            foreach (var weapon in weapons)
+            {
+                weapon.Update(gameTime, playerPosition); // Update each weapon
+            }
+
 
             base.Update(gameTime);
         }
@@ -455,6 +483,11 @@ namespace ThoneOfAshes_LastEmber
                 enemy.Draw(_spriteBatch, cameraPosition);
             }
 
+            foreach (var weapon in weapons)
+            {
+                weapon.Draw(_spriteBatch, cameraPosition); // Draw each weapon
+            }
+
             // Draw damage popups
             foreach (var popup in damagePopups)
             {
@@ -473,6 +506,11 @@ namespace ThoneOfAshes_LastEmber
             }
 
             _spriteBatch.DrawString(uiFont, $"XP: {currentXP}", new Vector2(10, 10), Color.LightGoldenrodYellow); // Draw the XP counter
+            
+            Texture2D debugBox = new Texture2D(GraphicsDevice, 1, 1);
+            debugBox.SetData(new[] { Color.White }); // Create a 1x1 white texture for the debug box
+            _spriteBatch.Draw(debugBox, debugLevelUpButton, Color.DarkSlateGray * 0.8f); // Draw the debug button background
+            _spriteBatch.DrawString(uiFont, "Debug Level Up", new Vector2(debugLevelUpButton.X + 10, debugLevelUpButton.Y + 10), Color.White); // Draw the debug button text
 
             float emberScale = 0.1f; // Scale for the foreground texture
             int tileWidth = (int)(emberLayerTexture.Width * emberScale);
@@ -566,7 +604,8 @@ namespace ThoneOfAshes_LastEmber
 
                 _spriteBatch.DrawString(
                     uiFont,
-                    "Upgrade Flameburst: Cooldown reduced by 20%",
+                    hasAshbrand ? "Upgrade Flameburst: Cooldown reduced by 20%"
+                                : "New Weapon: Ashbrand - Orbiting smoldering blade",
                     new Vector2(upgradeButtonRect.X + 10, upgradeButtonRect.Y + 20),
                     Color.White
                 );
