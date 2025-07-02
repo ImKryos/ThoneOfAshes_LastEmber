@@ -60,6 +60,9 @@ namespace ThoneOfAshes_LastEmber
         float smokeScrollSpeed = 10f; // Speed of the smoke overlay scrolling
         Texture2D ashGaleTexture; // Placeholder for Ash Gale texture
         Vector2 ashGaleOffset = Vector2.Zero; // Offset for the Ash Gale effect
+        Texture2D ruinsTexture; // Placeholder for ruins texture
+        Vector2 ruinsOffset = Vector2.Zero; // Offset for the ruins effect
+        private Vector2 ruinsDriftOffset = Vector2.Zero; // Offset for the ruins drift effect
 
         Vector2 cameraPosition = Vector2.Zero; // Camera position for scrolling background
 
@@ -110,6 +113,7 @@ namespace ThoneOfAshes_LastEmber
             emberLayerTexture = Content.Load<Texture2D>("ashlands_foreground"); // Load the foreground texture
             smokeOverlayTexture = Content.Load<Texture2D>("smoke_whisp"); // Load the smoke overlay texture
             ashGaleTexture = Content.Load<Texture2D>("ash_gale"); // Load the Ash Gale texture
+            ruinsTexture = Content.Load<Texture2D>("ruins_2"); // Load the ruins texture
         }
 
         protected override void Update(GameTime gameTime)
@@ -120,6 +124,7 @@ namespace ThoneOfAshes_LastEmber
             emberDriftOffset += new Vector2(10f, 4f) * (float)gameTime.ElapsedGameTime.TotalSeconds; // Update ember drift offset
             smokeOffset += new Vector2(5f, 2f) * (float)gameTime.ElapsedGameTime.TotalSeconds;
             ashGaleOffset += new Vector2(100f, 40f) * (float)gameTime.ElapsedGameTime.TotalSeconds; // Update Ash Gale offset
+            ruinsOffset += new Vector2(2f, 0.8f) * (float)gameTime.ElapsedGameTime.TotalSeconds; // Update ruins offset
 
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
@@ -317,7 +322,7 @@ namespace ThoneOfAshes_LastEmber
 
             _spriteBatch.Begin();
 
-            int tileSize = 1024; 
+                        int tileSize = 1024; 
             int tilesX = (_graphics.PreferredBackBufferWidth / tileSize) + 2; // Extra tiles for scrolling
             int tilesY = (_graphics.PreferredBackBufferHeight / tileSize) + 2; // Extra tiles for scrolling
 
@@ -334,6 +339,40 @@ namespace ThoneOfAshes_LastEmber
                         backgroundTexture,              // the background texture
                         tilePosition - cameraPosition,  // offset position based on camera
                         Color.White
+                    );
+                }
+            }
+
+            float ruinsScale = 1.5f; // Scale for the ruins texture - faint and far away
+            int ruinsTileWidth = (int)(ruinsTexture.Width * ruinsScale);
+            int ruinsTileHeight = (int)(ruinsTexture.Height * ruinsScale);
+
+            Vector2 ruinsParallaxOffset = (playerPosition * 0.2f) + ruinsOffset; // Parallax effect for the ruins - slowest parallax
+
+            int ruinsTilesX = (_graphics.PreferredBackBufferWidth / ruinsTileWidth) + 2; // Extra tiles for scrolling
+            int ruinsTilesY = (_graphics.PreferredBackBufferHeight / ruinsTileHeight) + 2; // Extra tiles for scrolling
+
+            int startXRuins = (int)Math.Floor(ruinsParallaxOffset.X / ruinsTileWidth);
+            int startYRuins = (int)Math.Floor(ruinsParallaxOffset.Y / ruinsTileHeight);
+
+            for (int y = -1; y < ruinsTilesY; y++)
+            {
+                for (int x = -1; x < ruinsTilesX; x++)
+                {
+                    Vector2 ruinPos = new Vector2(
+                        x * ruinsTileWidth - (int)(ruinsParallaxOffset.X % ruinsTileWidth),
+                        y * ruinsTileHeight - (int)(ruinsParallaxOffset.Y % ruinsTileHeight)
+                    );
+                    _spriteBatch.Draw(
+                        ruinsTexture,
+                        ruinPos,
+                        null,
+                        Color.White * 0.25f, // Faint effect
+                        0f,
+                        Vector2.Zero,
+                        ruinsScale,
+                        SpriteEffects.None,
+                        0f
                     );
                 }
             }
